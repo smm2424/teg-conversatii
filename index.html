@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="ro">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Conversații bot facturi TEG</title>
+<style>
+  :root{
+    --bg:#f0f2f5; --panel:#fff; --line:#e4e6eb; --text:#111b21; --muted:#667781;
+    --in:#fff; --out:#d9fdd3; --accent:#0f5132; --head:#f6f7f9; --badge:#25d366;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0b141a; --panel:#111b21; --line:#222d34; --text:#e9edef; --muted:#8696a0;
+           --in:#1f2c34; --out:#005c4b; --accent:#25d366; --head:#1f2c34; }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{font:14px/1.45 -apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);
+       display:flex;flex-direction:column;overflow:hidden}
+  header{display:flex;gap:10px;align-items:center;padding:10px 14px;background:var(--head);border-bottom:1px solid var(--line);flex:0 0 auto}
+  header h1{font-size:15px;margin:0;font-weight:650;white-space:nowrap}
+  #stare{font-size:12px;color:var(--muted);margin-left:auto;display:flex;align-items:center;gap:6px}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--badge)}
+  .dot.off{background:#e07a5f}
+  #q{flex:1;max-width:280px;padding:7px 10px;border:1px solid var(--line);border-radius:18px;background:var(--panel);color:var(--text);font-size:13px}
+  main{flex:1;display:flex;min-height:0}
+  #lista{width:300px;flex:0 0 300px;background:var(--panel);border-right:1px solid var(--line);overflow-y:auto}
+  .pers{display:flex;flex-direction:column;gap:2px;padding:10px 12px;border-bottom:1px solid var(--line);cursor:pointer}
+  .pers:hover{background:var(--head)}
+  .pers.activ{background:var(--head);box-shadow:inset 3px 0 0 var(--badge)}
+  .pers .sus{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+  .pers .nume{font-weight:600}
+  .pers .ora{font-size:11px;color:var(--muted);white-space:nowrap}
+  .pers .ultim{font-size:12.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .pers .rol{font-size:10px;color:var(--muted);border:1px solid var(--line);border-radius:8px;padding:0 5px;align-self:flex-start;margin-top:2px}
+  #fir{flex:1;display:flex;flex-direction:column;min-width:0}
+  #firHead{padding:10px 14px;background:var(--head);border-bottom:1px solid var(--line);font-weight:600;display:flex;gap:10px;align-items:center}
+  #firHead button{display:none}
+  #mesaje{flex:1;overflow-y:auto;padding:14px;-webkit-overflow-scrolling:touch;display:flex;flex-direction:column;gap:8px}
+  .zi{align-self:center;background:var(--head);color:var(--muted);font-size:11px;padding:3px 10px;border-radius:10px;margin:6px 0}
+  .b{max-width:min(78%,640px);padding:7px 10px 18px;border-radius:10px;position:relative;white-space:pre-wrap;word-wrap:break-word;
+     box-shadow:0 1px 1px rgba(0,0,0,.08)}
+  .b.in{align-self:flex-start;background:var(--in);border-top-left-radius:2px}
+  .b.out{align-self:flex-end;background:var(--out);border-top-right-radius:2px}
+  .b .meta{position:absolute;right:9px;bottom:4px;font-size:10.5px;color:var(--muted)}
+  .b .tag{display:inline-block;font-size:10.5px;color:var(--muted);border:1px solid rgba(0,0,0,.12);border-radius:8px;padding:0 5px;margin-right:6px}
+  .b a{color:inherit}
+  .cit{display:block;border-left:3px solid var(--badge);background:rgba(127,127,127,.12);border-radius:5px;
+       padding:4px 8px;margin:0 0 6px;font-size:12.5px;color:var(--muted);white-space:pre-wrap;cursor:pointer}
+  .cit b{display:block;color:var(--badge);font-size:11.5px;font-weight:600}
+  .b.sari{outline:2px solid var(--badge)}
+  .att{margin-top:8px}
+  .att img{max-width:100%;border-radius:8px;display:block;cursor:zoom-in}
+  .att iframe{width:100%;height:440px;border:0;border-radius:8px;background:#fff}
+  .att .jos{font-size:11.5px;color:var(--muted);margin-top:4px;display:flex;gap:10px;flex-wrap:wrap}
+  .gol{margin:auto;color:var(--muted);text-align:center;max-width:420px;padding:20px}
+  #poarta{position:fixed;inset:0;background:var(--bg);display:none;align-items:center;justify-content:center;z-index:50}
+  #poarta .cut{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:26px 24px;max-width:340px;width:90%;text-align:center}
+  #poarta h2{margin:0 0 6px;font-size:16px}
+  #poarta p{margin:0 0 16px;font-size:12.5px;color:var(--muted)}
+  #poarta input{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--text);
+                font-size:18px;text-align:center;letter-spacing:4px}
+  #poarta button{margin-top:12px;width:100%;padding:10px;border:0;border-radius:10px;background:var(--badge);color:#06281c;font-weight:650;font-size:14px;cursor:pointer}
+  #poartaErr{color:#e07a5f;font-size:12.5px;min-height:18px;margin-top:8px}
+  @media (max-width:760px){
+    header{flex-wrap:wrap;row-gap:8px}
+    header h1{font-size:14px}
+    #q{order:3;flex:1 0 100%;max-width:none}
+    #stareTxt{display:none}
+    #lista{position:absolute;inset:88px 0 0 0;width:100%;flex:none;z-index:5}
+    body.deschis #lista{display:none}
+    #firHead button{display:inline-block;background:none;border:0;color:var(--text);font-size:18px;cursor:pointer;padding:0 4px}
+    .att iframe{height:300px}
+  }
+  .att .pg{width:100%;height:auto;border-radius:6px;display:block;margin-bottom:6px;background:#fff;cursor:zoom-in}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+</head>
+<body>
+<header>
+  <h1>💬 Conversații bot</h1>
+  <input id="q" placeholder="Caută nume, număr sau text…">
+  <div id="stare"><span class="dot off" id="dot"></span><span id="stareTxt">se conectează…</span>
+    <span id="reset" title="Reîmprospătează acum" style="cursor:pointer;opacity:.6">⚙️</span></div>
+</header>
+<main>
+  <div id="lista"></div>
+  <div id="fir">
+    <div id="firHead"><button onclick="inapoi()">←</button><span id="firNume">Alege o conversație</span></div>
+    <div id="mesaje"><div class="gol" id="gol">se încarcă…</div></div>
+  </div>
+</main>
+<div id="poarta"><div class="cut">
+  <h2>Cod de acces</h2>
+  <p>Pagina cu conversațiile botului de facturi. Codul ți-l dă Sebastian; se cere o singură dată pe acest browser.</p>
+  <input id="pinInp" type="password" inputmode="numeric" autocomplete="one-time-code" placeholder="••••••">
+  <button onclick="intra()">Intră</button>
+  <div id="poartaErr"></div>
+</div></div>
+<script>
+(function(){
+  // Pagina e găzduită static și cere datele de la Apps Script prin fetch, fără cont Google.
+  // Nu conține niciun secret: codul de acces e tastat de om și trimis la fiecare cerere, verificat pe server.
+  // v0.75: pagina e publică (GitHub Pages), deci adresa API NU e în ea: vine din linkul primit (#api=<ID deployment>) și se ține în browser.
+  var API = '';
+  try { var h = new URLSearchParams(location.hash.slice(1)); var a = h.get('api');
+    if (a && /^AKfycb[\w-]{20,}$/.test(a)) { localStorage.setItem('convapi', a); history.replaceState(null, '', location.pathname + location.search); }
+    API = localStorage.getItem('convapi') || ''; } catch(e) {}
+  API = API ? 'https://script.google.com/macros/s/' + API + '/exec' : '';
+  if (!API) document.addEventListener('DOMContentLoaded', function(){ var p = document.getElementById('poartaErr'); if (p) p.textContent = 'Deschide pagina din linkul complet (cu #api=…) primit de la Sebastian.'; });
+  function cer(par){
+    var u = API + '?' + Object.keys(par).map(function(k){ return k + '=' + encodeURIComponent(par[k]); }).join('&');
+    return fetch(u, { credentials: 'omit' }).then(function(r){ return r.json(); });
+  }
+  var qs = new URLSearchParams(location.search);
+  var PAS = Math.max(3, Number(qs.get('sec') || 5)) * 1000;
+  var mesaje = [], persoane = [], activ = qs.get('tel') || '', ultim = 0, filtru = '';
+  var dupaId = {};        // id mesaj WhatsApp -> mesaj (pentru reply)
+  var media = {};         // id fisier Drive -> {stare, url, mime, nume}
+  var pin = '';
+
+  var $ = function(id){ return document.getElementById(id); };
+  function ora(t){ var d=new Date(t); return ('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2); }
+  function zi(t){ var d=new Date(t); return d.toLocaleDateString('ro-RO',{day:'2-digit',month:'short',year:'numeric'}); }
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+  function wa(s){ return esc(s).replace(/\*([^*\n]+)\*/g,'<b>$1</b>').replace(/_([^_\n]+)_/g,'<i>$1</i>'); }
+  function stare(ok, txt){ $('dot').className = 'dot' + (ok?'':' off'); $('stareTxt').textContent = txt; }
+
+  // ---------- poarta ----------
+  try { pin = localStorage.getItem('convpin') || ''; } catch(e) { pin = ''; }
+  window.intra = function(){
+    var v = $('pinInp').value.trim();
+    if (!v) return;
+    pin = v;
+    try { localStorage.setItem('convpin', v); } catch(e) {}
+    $('poartaErr').textContent = 'verific…';
+    trage();
+  };
+  $('pinInp').addEventListener('keydown', function(e){ if (e.key === 'Enter') intra(); });
+  function cerePin(msg){
+    pin = '';
+    try { localStorage.removeItem('convpin'); } catch(e) {}
+    $('poarta').style.display = 'flex';
+    $('poartaErr').textContent = msg || '';
+    $('pinInp').value = ''; $('pinInp').focus();
+  }
+  function poartaJos(){ $('poarta').style.display = 'none'; $('poartaErr').textContent = ''; }
+
+  // ---------- lista de persoane ----------
+  function deseneazaLista(){
+    var f = filtru.toLowerCase();
+    var l = persoane.filter(function(p){
+      if(!f) return true;
+      if((p.nume||'').toLowerCase().indexOf(f)>=0 || p.tel.indexOf(f)>=0) return true;
+      return mesaje.some(function(m){ return m.tel===p.tel && (m.text||'').toLowerCase().indexOf(f)>=0; });
+    });
+    $('lista').innerHTML = l.map(function(p){
+      return '<div class="pers'+(p.tel===activ?' activ':'')+'" onclick="alege(\''+p.tel+'\')">'+
+        '<div class="sus"><span class="nume">'+esc(p.nume||p.tel)+'</span><span class="ora">'+(p.ultim?ora(p.ultim):'')+'</span></div>'+
+        '<div class="ultim">'+esc(p.ultimText||'')+'</div>'+
+        (p.rol?'<span class="rol">'+esc(p.rol)+' · '+esc(p.tel)+'</span>':'<span class="rol">'+esc(p.tel)+'</span>')+
+      '</div>';
+    }).join('') || '<div class="gol">nicio conversație</div>';
+  }
+
+  // ---------- atasamente ----------
+  function cereFisier(fid){
+    if (media[fid] && media[fid].stare !== 'nou') return;
+    media[fid] = { stare: 'cer' };
+    cer({ api:'fisier', pin:pin, fid:fid })
+      .then(function(r){
+        if (!r || !r.ok) { media[fid] = { stare:'eroare', de: (r && r.err) || 'eroare' }; deseneazaFir(); return; }
+        var bin = atob(r.b64), n = bin.length, oct = new Uint8Array(n);
+        for (var i=0;i<n;i++) oct[i] = bin.charCodeAt(i);
+        var mime = r.mime || '';
+        var url = URL.createObjectURL(new Blob([oct], {type: mime || 'application/octet-stream'}));
+        media[fid] = { stare:'gata', url:url, mime:mime, nume:r.nume||'', pagini:null };
+        deseneazaFir();
+        // PDF-ul se deseneaza cu pdf.js; <iframe> cu blob nu e de incredere in toate browserele,
+        // asa ca desenez paginile cu pdf.js in <canvas> si le pun ca imagini.
+        if (/pdf/.test(mime) && window.pdfjsLib) randeazaPdf(fid, oct);
+      })
+      .catch(function(){ media[fid] = { stare:'eroare', de:'legatura' }; deseneazaFir(); });
+  }
+  function randeazaPdf(fid, oct){
+    try {
+      pdfjsLib.getDocument({ data: oct }).promise.then(function(pdf){
+        var n = Math.min(pdf.numPages, 5), poze = [], gata = 0;
+        for (var i = 1; i <= n; i++) {
+          (function(nr){
+            pdf.getPage(nr).then(function(pg){
+              var vp = pg.getViewport({ scale: 1.6 });
+              var c = document.createElement('canvas');
+              c.width = vp.width; c.height = vp.height;
+              pg.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise.then(function(){
+                poze[nr-1] = { d: c.toDataURL('image/png'), w: c.width, h: c.height };
+                if (++gata === n) { media[fid].pagini = poze; media[fid].total = pdf.numPages; deseneazaFir(); }
+              });
+            });
+          })(i);
+        }
+      }).catch(function(){ if (media[fid]) { media[fid].pagini = []; deseneazaFir(); } });
+    } catch(e) { if (media[fid]) { media[fid].pagini = []; deseneazaFir(); } }
+  }
+
+  function atasament(m){
+    if (!m.fid) return m.fisier ? ' <a href="'+esc(m.fisier)+'" target="_blank" rel="noopener">📎 fișier</a>' : '';
+    var st = media[m.fid];
+    if (!st || st.stare === 'nou') { cereFisier(m.fid); st = media[m.fid]; }
+    var jos = '<div class="jos"><a href="'+esc(m.fisier)+'" target="_blank" rel="noopener">📎 deschide în Drive</a>'+
+              (st && st.nume ? '<span>'+esc(st.nume)+'</span>' : '')+'</div>';
+    if (!st || st.stare === 'cer') return '<div class="att"><div class="jos">se încarcă atașamentul…</div></div>';
+    if (st.stare === 'eroare') return '<div class="att"><div class="jos">nu am putut încărca atașamentul aici'+
+      (st.de === 'mare' ? ' (peste 7 MB)' : '')+'</div>'+jos.replace('<div class="jos">','<div class="jos" style="margin-top:0">')+'</div>';
+    var mime = st.mime || m.mime || '';
+    if (/^image\//.test(mime)) return '<div class="att"><img src="'+st.url+'" alt="" onclick="window.open(\''+st.url+'\')">'+jos+'</div>';
+    if (/pdf/.test(mime)) {
+      if (st.pagini === null || st.pagini === undefined) return '<div class="att"><div class="jos">se deseneaz\u0103 PDF-ul\u2026</div>'+jos+'</div>';
+      if (!st.pagini.length) return '<div class="att"><div class="jos">PDF-ul nu s-a putut desena aici</div>'+jos+'</div>';
+      return '<div class="att">'+st.pagini.map(function(p){ return '<img class="pg" width="'+p.w+'" height="'+p.h+'" src="'+p.d+'" onclick="window.open(\''+st.url+'\')">'; }).join('')+
+             (st.total > st.pagini.length ? '<div class="jos">primele '+st.pagini.length+' din '+st.total+' pagini</div>' : '')+jos+'</div>';
+    }
+    return '<div class="att">'+jos+'</div>';
+  }
+
+  // ---------- firul ----------
+  function scurt(s){ s = String(s||'').replace(/\n/g,' '); return s.length > 110 ? s.slice(0,110)+'…' : (s || '(fișier)'); }
+  function citat(m){
+    if (!m.reply) return '';
+    var q = dupaId[m.reply];
+    if (!q) return '<span class="cit"><b>răspuns la un mesaj mai vechi</b>nu e în intervalul încărcat</span>';
+    var cine = q.dir === 'OUT' ? 'Bot' : (q.nume || q.tel);
+    return '<span class="cit" onclick="sari(\''+esc(m.reply)+'\')"><b>'+esc(cine)+'</b>'+esc(scurt(q.text))+'</span>';
+  }
+  window.sari = function(id){
+    var el = document.querySelector('[data-id="'+id+'"]');
+    if (!el) return;
+    el.scrollIntoView({block:'center', behavior:'smooth'});
+    el.classList.add('sari'); setTimeout(function(){ el.classList.remove('sari'); }, 1600);
+  };
+
+  // Cand se incarca un atasament, redesenez firul si innerHTML muta scroll-ul in sus.
+  // Ca sa nu sara pagina, retin ce bula era prima in ecran si pe ce offset, si o pun la loc dupa redesenare.
+  function iaAncora(box){
+    var b = box.querySelectorAll('.b');
+    for (var i = 0; i < b.length; i++) {
+      if (b[i].offsetTop + b[i].offsetHeight > box.scrollTop) return { idx: i, delta: b[i].offsetTop - box.scrollTop };
+    }
+    return null;
+  }
+  function puneAncora(box, a){
+    if (!a) return;
+    var b = box.querySelectorAll('.b');
+    var el = b[a.idx];
+    if (el) box.scrollTop = el.offsetTop - a.delta;
+  }
+
+  function deseneazaFir(){
+    var box = $('mesaje');
+    if(!activ){ box.innerHTML = '<div class="gol">Alege o conversație din stânga.</div>'; return; }
+    var p = persoane.filter(function(x){return x.tel===activ;})[0] || {tel:activ};
+    $('firNume').textContent = (p.nume||p.tel) + ' · ' + p.tel;
+    var jos = box.scrollHeight - box.scrollTop - box.clientHeight < 80;
+    var anc = jos ? null : iaAncora(box);
+    var ziAnt = '', h = '';
+    mesaje.filter(function(m){return m.tel===activ;}).forEach(function(m){
+      var z = zi(m.t);
+      if(z!==ziAnt){ h += '<div class="zi">'+z+'</div>'; ziAnt = z; }
+      var tag = '';
+      if(m.tip && ['text','document','image'].indexOf(m.tip)<0) tag += '<span class="tag">'+esc(m.tip)+'</span>';
+      if(m.rand) tag += '<span class="tag">rând '+m.rand+'</span>';
+      if(m.stare && m.dir==='IN' && m.stare!=='PROCESAT') tag += '<span class="tag">'+esc(m.stare)+'</span>';
+      h += '<div class="b '+(m.dir==='IN'?'in':'out')+'" data-id="'+esc(m.id||'')+'">'+
+           citat(m)+tag+wa(m.text||'')+atasament(m)+
+           '<span class="meta">'+ora(m.t)+'</span></div>';
+    });
+    box.innerHTML = h || '<div class="gol">nimic aici</div>';
+    if (jos) { box.scrollTop = box.scrollHeight; }
+    else {
+      puneAncora(box, anc);
+      // imaginile fara dimensiuni isi schimba inaltimea dupa ce se incarca: repun ancora atunci
+      var im = box.querySelectorAll('img');
+      for (var k = 0; k < im.length; k++) {
+        if (!im[k].complete) im[k].addEventListener('load', function(){ puneAncora(box, anc); }, { once: true });
+      }
+    }
+  }
+
+  window.alege = function(tel){ activ = tel; document.body.classList.add('deschis'); deseneazaLista(); deseneazaFir(); };
+  window.inapoi = function(){ document.body.classList.remove('deschis'); };
+
+  $('q').addEventListener('input', function(e){ filtru = e.target.value; deseneazaLista(); });
+  $('reset').onclick = function(){ stare(true,'reîmprospătez…'); trage(); };
+
+  function cheie(m){ return m.dir+'|'+m.t+'|'+m.tel+'|'+(m.text||'').slice(0,40); }
+
+  var ocupat = false;
+  function trage(){
+    if (!pin) { cerePin(''); return; }
+    if (ocupat) return; ocupat = true;
+    cer({ api:'conv', pin:pin, dupa:ultim })
+      .then(function(j){ ocupat = false; primit(j); })
+      .catch(function(){ ocupat = false; stare(false, 'fără legătură'); });
+  }
+
+  function primit(j){
+    if (!j || !j.ok) {
+      if (j && j.err === 'pin') { cerePin(j.mesajEroare || 'Cod de acces greșit.'); return; }
+      stare(false, (j && j.err === 'acces') ? 'fără drept de acces' : 'eroare');
+      poartaJos();
+      $('mesaje').innerHTML = '<div class="gol">' + esc((j && j.mesajEroare) || 'Nu am putut citi conversațiile.') + '</div>';
+      return;
+    }
+    poartaJos();
+    var vazut = {}; mesaje.forEach(function(m){ vazut[cheie(m)] = 1; });
+    (j.mesaje||[]).forEach(function(m){ if(!vazut[cheie(m)]) mesaje.push(m); });
+    mesaje.sort(function(a,b){ return a.t-b.t; });
+    dupaId = {}; mesaje.forEach(function(m){ if (m.id) dupaId[m.id] = m; });
+    if (mesaje.length) ultim = mesaje[mesaje.length-1].t;
+    // fuziune: apelurile urmatoare (dupa>0) intorc doar mesajele noi, deci si o lista de persoane partiala.
+    // Daca as inlocui lista, ar disparea toate conversatiile fara mesaje noi.
+    var idxP = {}; persoane.forEach(function(p){ idxP[p.tel] = p; });
+    (j.persoane||[]).forEach(function(p){
+      var o = idxP[p.tel];
+      if (o) { if (p.ultim > o.ultim) { o.ultim = p.ultim; o.ultimText = p.ultimText; }
+               if (p.nume) o.nume = p.nume; if (p.rol) o.rol = p.rol; }
+      else { persoane.push(p); idxP[p.tel] = p; }
+    });
+    persoane.sort(function(a,b){ return b.ultim - a.ultim; });
+    if (!activ && persoane.length) activ = persoane[0].tel;
+    stare(true, 'live · ' + mesaje.length + ' mesaje · ' + ora(Date.now()));
+    deseneazaLista(); deseneazaFir();
+  }
+  if (!pin) cerePin(''); else trage();
+  setInterval(function(){ if (pin) trage(); }, PAS);
+  document.addEventListener('visibilitychange', function(){ if(!document.hidden && pin) trage(); });
+})();
+</script>
+</body>
+</html>
